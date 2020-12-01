@@ -1,0 +1,7 @@
+.vercel
+.env
+.next
+node_modules
+public/sw.js
+public/workbox-*.js
+sitemap.xml
