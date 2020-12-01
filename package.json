@@ -9,6 +9,7 @@
     "sitemap": "yarn ts-node -r tsconfig-paths/register sitemap-generator.ts"
   },
   "dependencies": {
+    "@babel/plugin-syntax-jsx": "^7.12.1",
     "@mdx-js/loader": "^1.6.21",
     "@mdx-js/runtime": "^1.6.21",
     "@next/mdx": "^10.0.3",
