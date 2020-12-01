@@ -18,9 +18,9 @@ start dev server
 yarn dev
 ```
 
-start dev server  
+build & generate-sitemap
 ```
-yarn dev
+yarn build
 ```
 
 ### Required Environmental Variables
