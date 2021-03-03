@@ -46,7 +46,7 @@
     "react": "17.0.1",
     "react-amphtml": "^4.0.2",
     "react-dom": "17.0.1",
-    "react-icons": "^4.1.0",
+    "react-icons": "^4.2.0",
     "recoil": "^0.1.2",
     "styled-components": "^5.2.1",
     "uuid": "^8.3.1"
