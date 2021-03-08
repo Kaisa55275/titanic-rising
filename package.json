@@ -21,7 +21,7 @@
     "@types/styled-components": "^5.1.4",
     "@zeit/react-jsx-parser": "^2.0.0",
     "async-sema": "^3.1.0",
-    "axios": "^0.21.0",
+    "axios": "^0.21.1",
     "babel-plugin-module-resolver": "^4.0.0",
     "babel-plugin-prismjs": "^2.0.1",
     "cookie": "^0.4.1",
