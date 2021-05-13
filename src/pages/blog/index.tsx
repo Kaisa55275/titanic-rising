@@ -1,44 +1,52 @@
 import React from 'react'
-import Header from 'src/components/Header'
-import Layout from 'src/components/layout'
+import { Layout } from 'src/components/Layout'
 import { GetStaticProps, NextPage } from 'next'
-import Head from 'src/components/layout/Head'
+import { Head } from 'src/components/Head'
 import { getMarkDownPosts } from 'src/lib/blog/getMarkdownPosts'
 import { Post } from 'types/data/blog'
-import { BlogContainer } from 'src/components/blog/container'
-import { useRouter } from 'next/router'
+import { BlogContainer } from 'src/components/Blog/BlogContainer'
+import { useAmp } from 'next/amp'
+import { BASE_URL } from 'src/lib/constants'
+import { processMdxPosts } from 'src/lib/blog/processMdxPosts'
+import { MutableSnapshot } from 'recoil'
+import { blogInitialState, blogState, BlogState } from 'src/atoms/blog'
 
-type StaticProps = {
+type Props = {
   posts: Post[]
 }
 
-const BlogPage: NextPage<StaticProps> = ({ posts = [] }) => {
-  const router = useRouter()
-  const includesDraft = !!router.query.draft
+const BlogPage: NextPage<Props> = ({ posts = [] }) => {
+  const isAmp = useAmp()
+  const initializeState = ({ set }: MutableSnapshot) => {
+    set<BlogState>(blogState, {
+      ...blogInitialState,
+      posts
+    })
+  }
+
   return (
-    <>
-      <Head title="Blog | Titanic Rising" />
-      <Layout>
-        <Header />
-        <BlogContainer posts={posts} includesDraft={includesDraft} />
+    <div className="blog-page">
+      <Head title="Blog | Titanic Rising">
+        {isAmp ? (
+          <link key="canonical" rel="canonical" href={BASE_URL + '/blog'} />
+        ) : (
+          <link rel="amphtml" href={BASE_URL + '/blog' + '.amp'} />
+        )}
+      </Head>
+      <Layout initializeState={initializeState}>
+        <BlogContainer />
       </Layout>
-    </>
+    </div>
   )
 }
 
-export const getStaticProps: GetStaticProps<StaticProps> = async () => {
-  const mdxPosts = await getMarkDownPosts()
+export const config = {
+  amp: 'hybrid'
+}
 
-  const posts = mdxPosts.map((post) => ({
-    title: post.data.title,
-    slug: post.slug,
-    published: post.data.published || false,
-    draft: post.data.draft || false,
-    date: post.data.date,
-    ogp: post.data.ogp,
-    tag: post.data.tag,
-    content: post.content
-  }))
+export const getStaticProps: GetStaticProps<Props> = async () => {
+  const mdxPosts = await getMarkDownPosts()
+  const posts = processMdxPosts(mdxPosts)
 
   return {
     props: {
@@ -49,7 +57,3 @@ export const getStaticProps: GetStaticProps<StaticProps> = async () => {
 }
 
 export default BlogPage
-
-export const config = {
-  amp: 'hybrid'
-}

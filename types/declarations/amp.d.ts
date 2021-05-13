@@ -46,6 +46,24 @@ interface AMPAnalytics extends BaseAttributesX {
   'data-credentials': string
 }
 
+interface AMPIframe extends BaseAttributesX {
+  src: string
+  width: number
+  height: number
+  layout?: string
+  sandbox?: string
+  frameborder?: number
+  allowfullscreen?: boolean
+}
+
+interface AMPVideo extends BaseAttributesX {
+  src: string
+  width?: number
+  height?: number
+  layout?: string
+  poster?: string
+}
+
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -54,6 +72,8 @@ declare global {
       'amp-sidebar': React.DetailedHTMLProps<AMPSideBar, HTMLElement>
       'amp-carousel': React.DetailedHTMLProps<AMPCarousel, HTMLElement>
       'amp-analytics': React.DetailedHTMLProps<AMPAnalytics, HTMLElement>
+      'amp-iframe': React.DetailedHTMLProps<AMPIframe, HTMLElement>
+      'amp-video': React.DetailedHTMLProps<AMPVideo, HTMLElement>
     }
   }
 }

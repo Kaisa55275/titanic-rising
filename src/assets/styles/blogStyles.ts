@@ -1,10 +1,6 @@
 import { css } from 'styled-components'
 
 export const blogStyles = css`
-  h1 {
-    font-size: 3.2rem;
-  }
-
   h2 {
     font-size: 2.4rem;
     margin-top: 50px;
@@ -49,6 +45,13 @@ export const blogStyles = css`
     display: inline;
     color: gray;
     text-decoration: underline;
+
+    &.bookmark {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      max-width: 600px;
+    }
   }
 
   .heading-index {
@@ -56,9 +59,12 @@ export const blogStyles = css`
   }
 
   img,
-  amp-img {
+  amp-img,
+  .next-image-container {
+    margin: 0 auto;
     display: block;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
   }
 
   ul,
@@ -152,6 +158,13 @@ export const blogStyles = css`
       object-fit: initial;
     }
   }
+
+  .bookmark-wrapper {
+    a {
+      display: block;
+    }
+  }
+
   blockquote {
     position: relative;
     padding: 30px 15px;

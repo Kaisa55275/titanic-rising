@@ -1,0 +1,276 @@
+---
+title: 'Notion Blogにタグ機能を追加する'
+published: true
+draft: false
+date: 20200902
+ogp: 'https://firebasestorage.googleapis.com/v0/b/titanic-rising.appspot.com/o/_2020-09-02_14.39.20.png?alt=media&token=58096dce-9f95-4db6-ab82-a00346421ad5'
+tag:
+  - Tech
+  - TypeScript
+---
+
+最近ブログのコンセプトというか内容がブレブレでなんでもありな感じになってきたのでタグ機能をつけて整理していきたいと思う。
+
+成果物は例の如くこのブログそのものです。
+
+## Notion 側の設定
+
+とりあえずタグを定義するための新しいテーブルを作ります。
+
+まあこの辺のデータはなんでもいい。
+
+<img
+  width={1518}
+  height={572}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383433/titanicrising.jp/notion-blog-tag/_2020-09-01_13.37.41_vcmt0p.png`}
+/>
+
+そしたらメインの記事テーブルにさっきの Tag テーブルのリレーションを作ります。
+
+<img
+  width={2242}
+  height={372}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383433/titanicrising.jp/notion-blog-tag/_2020-09-01_13.38.46_xvzfd7.png`}
+/>
+
+あとは記事テーブル側からさっき作成したタグテーブルのアイテムを選択するだけ。
+
+<img
+  width={1300}
+  height={530}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383432/titanicrising.jp/notion-blog-tag/_2020-09-01_13.39.02_lm1f7m.png`}
+/>
+
+## Next.js 側の設定
+
+とりあえず一覧表示にタグを出したい。出させてください。
+
+ソースコードをみると Notion のデータの呼び出しは getTableData 関数を使っているようなのでここをいじってみる。
+
+```tsx
+// src/lib/notion/getTableData.ts
+
+//　略
+schemaKeys.forEach(async (key) => {
+  // might be undefined
+  let val = props[key] && props[key][0][0]
+
+  // authors and blocks are centralized
+  if (val && props[key][0][1]) {
+    const type = props[key][0][1][0]
+
+    switch (type[0]) {
+      case 'a': // link
+        val = type[1]
+        break
+      case 'u': // user
+        val = props[key]
+          .filter((arr: any[]) => arr.length > 1)
+          .map((arr: any[]) => arr[1][0][1])
+        break
+      case 'p': // page (block)
+        const page = col.recordMap.block[type[1]]
+          row.id = page.value.id
+          val = page.value.properties.title[0][0]
+        }
+
+        break
+      case 'd': // date
+        // start_date: 2019-06-18
+        // start_time: 07:00
+        // time_zone: Europe/Berlin, America/Los_Angeles
+
+        if (!type[1].start_date) {
+          break
+        }
+        // initial with provided date
+        const providedDate = new Date(
+          type[1].start_date + ' ' + (type[1].start_time || '')
+        ).getTime()
+
+        // calculate offset from provided time zone
+        const timezoneOffset =
+          new Date(
+            new Date().toLocaleString('en-US', {
+              timeZone: type[1].time_zone
+            })
+          ).getTime() - new Date().getTime()
+
+        // initialize subtracting time zone offset
+        val = new Date(providedDate - timezoneOffset).getTime()
+        break
+      default:
+        console.error('unknown type', type[0], type)
+        break
+    }
+  }
+```
+
+リレーションの type は case でいう'p'に引っかかるのでここの条件分岐を編集する。
+
+次に複数のタグが入ってきた場合に対応するため、上記の const type = の部分を以下のように書き換える。
+
+もうこれは説明できないけどこれで動く。
+
+```tsx
+// src/lib/notion/getTableData.ts
+
+const type =
+  props[key].length < 2
+    ? props[key][0][1][0]
+    : [
+        props[key][0][1][0][0],
+        ...props[key]
+          .map((p) => p[1])
+          .filter((f) => !!f)
+          .map((fp) => fp[0][1])
+      ]
+```
+
+次に Notion_id からタグのデータを取得する getTagData 関数を新たに作成する。
+
+```tsx
+// src/lib/notion/getTagData.ts
+
+import rpc, { values } from './rpc'
+
+export default async function getTagData(pageId: string) {
+  const obj = {
+    Color: null,
+    Title: null,
+    Slug: null
+  }
+
+  try {
+    const data = await loadPageChunk({ pageId })
+    const blocks = values(data.recordMap.block)
+
+    if (blocks[0].value?.properties) {
+      const props = blocks[0].value?.properties
+      obj.Color = props['n<}n'][0]
+      obj.Title = props['title'][0]
+      obj.Slug = props['e;z{'][0]
+    }
+  } catch (err) {
+    console.error(`Failed to load pageData for ${pageId}`, err)
+  }
+
+  if (obj.Title && obj.Slug && obj.Color) {
+    return obj
+  }
+}
+
+export function loadPageChunk({
+  pageId,
+  limit = 100,
+  cursor = { stack: [] },
+  chunkNumber = 0,
+  verticalColumns = false
+}: any): any {
+  return rpc('loadPageChunk', {
+    pageId,
+    limit,
+    cursor,
+    chunkNumber,
+    verticalColumns
+  })
+}
+```
+
+これをさっきの Switch 文の中で呼び出してあげる。
+
+```tsx
+// src/lib/notion/getTableData.ts
+
+// 略
+case 'p':
+  const page = col.recordMap.block[type[1]]
+  if (page) {
+    row.id = page.value.id
+    val = page.value.properties.title[0][0]
+  }
+
+	//追加！！！
+  if (!page) {
+    const tagsPromise = type
+      .map(async (t) => {
+        const tag = await getTagData(t)
+        return tag
+      })
+      .filter((_, i) => i !== 0)
+
+    const tags = await Promise.all(tagsPromise)
+    val = tags
+  }
+  break
+```
+
+新たに作成した Tag を Post の型定義に追加する。
+
+```tsx
+// types/post.ts
+
+export type Post = {
+  id: string
+  Authors: string[]
+  Slug: string
+  Published: 'Yes' | 'No'
+  Date: number
+  Page: string
+  preview: unknown[][]
+  content: PostContent[]
+  hasTweet: boolean
+  Ogp: string
+  Tag: {
+    Color: string
+    Title: string
+    Slug: string
+  }[]
+}
+```
+
+あとは見た目に反映するだけ！
+
+こんな感じで呼び出せば一覧ページに表示できる！
+
+```tsx
+// src/components/Blog.tsx
+
+//タグの背景色算出する
+const getBlackOrWhite = (hexcolor: string) => {
+  const r = parseInt(hexcolor.substr(1, 2), 16)
+  const g = parseInt(hexcolor.substr(3, 2), 16)
+  const b = parseInt(hexcolor.substr(5, 2), 16)
+
+  return (r * 299 + g * 587 + b * 114) / 1000 < 128 ? 'white' : 'black'
+}
+
+//略
+{
+  post.Tag.map((t) => (
+    <Link key={t.Slug} href={{ pathname: 'blog', query: { tag: t.Slug } }}>
+      <a
+        className="post-tags__item"
+        style={{
+          backgroundColor: t.Color,
+          color: `${getBlackOrWhite(t.Color || '#ffffff')}`
+        }}
+      >
+        {t.Title}
+      </a>
+    </Link>
+  ))
+}
+```
+
+一覧ページこんな感じ！
+
+<img
+  width={1150}
+  height={422}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383433/titanicrising.jp/notion-blog-tag/_2020-09-02_14.39.20_yvwxqh.png`}
+/>
+
+自分の選色のセンスが絶望的すぎて微妙…
+
+やっぱ白黒だけでいいのかなあ…🤔

@@ -10,8 +10,7 @@ import NextDocument, {
 import { ServerStyleSheet } from 'styled-components'
 
 type Props = {
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  styles: Array<React.ReactElement<{}>>
+  styles: Array<React.ReactElement<unknown>>
 }
 
 class MyDocument extends NextDocument<Props> {
@@ -29,9 +28,12 @@ class MyDocument extends NextDocument<Props> {
         })
 
       const initialProps = await NextDocument.getInitialProps(ctx)
+
       const initialStyles =
         initialProps.styles instanceof Array ? initialProps.styles : []
+
       const styles = [...initialStyles, ...sheet.getStyleElement()]
+
       return {
         ...initialProps,
         styles

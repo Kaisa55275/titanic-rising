@@ -1,0 +1,148 @@
+---
+title: 'Recoil使ってみた'
+published: true
+draft: false
+date: 20200921
+ogp: 'https://firebasestorage.googleapis.com/v0/b/titanic-rising.appspot.com/o/886E983F-5E9B-45FA-82FF-CA559B59E8B5.png?alt=media&token=93e81cb2-3a96-43d9-8502-9db37b3439ec'
+tag:
+  - Tech
+  - TypeScript
+---
+
+ブログ下部に人気記事ランキングを持たせるコンポーネントを追加したが、local state の値に内容を持たせているためコンポーネントがアンマウントする度に内容を忘れてしまうというデメリットがあった。
+
+一回読み込んだはずなのに他の記事でもう一回読み込むのは流石にアホなので State を Global で管理する事にした。
+
+## なぜ Recoil？
+
+使った事がなかったから。
+
+React の Global State のライブラリで Context API と Redux はかなり慣れ親しんでいたが、Recoil は最近できたばかりなのもあってなかなか触れずにいた。
+
+あと Facebook が出しているというのもなかなか大きい。
+
+まあ自分は Redux 大好き人間だがたまには気分を変える意味でもね…許せ…Redux…
+
+[!!BOOKMARK!!Recoil](https://recoiljs.org/)
+
+## 導入していく〜
+
+最新バージョンは標準で TypeScript に対応しているので npm install なり yarn add で追加
+
+```tsx
+yarn add recoil
+```
+
+まずは Redux の Provider と同じ要領で外側を RecoilRoot で囲む。next.js の場合は pages/\_app.tsx に置くのがいいかな。
+
+```tsx
+import React from 'react'
+import Footer from 'src/components/shared/footer'
+import { AppProps } from 'next/app'
+import { NextPage } from 'next'
+// 追加
+import { RecoilRoot } from 'recoil'
+
+const App: NextPage<AppProps> = ({ Component, pageProps }) => {
+  return (
+    // 追加
+    <RecoilRoot>
+      <Component {...pageProps} />
+      <Footer />
+    </RecoilRoot>
+  )
+}
+
+export default App
+```
+
+これで配下で Recoil のステートにアクセスできるようになる。
+
+## atom の作成
+
+recoil では state の生成に atom という関数を使う。
+
+内容はめちゃめちゃシンプル。
+
+```tsx
+// src/atoms/blog.ts
+import { atom } from 'recoil'
+import { TopArticles } from 'types/data/top_articles'
+
+export type BlogState = {
+  topArticles: TopArticles
+}
+
+const initialState: BlogState = {
+  topArticles: null
+}
+
+export const blogState = atom({
+  key: 'blog',
+  default: initialState
+})
+```
+
+これで定義が完了。topArticles という配列を格納した blogState というステートが定義された。
+
+## 呼び出し
+
+useRecoilState という Hook を使えば標準の useState と全く同じ要領で State を取り回す事ができる。
+
+```tsx
+// useTopArticles.ts
+import { useEffect, useMemo } from 'react'
+import { TopArticles } from 'types/data/top_articles'
+// 追加
+import { useRecoilState } from 'recoil'
+import { blogState } from 'src/atoms/blog'
+
+export const useTopArticles = () => {
+  // 生成したStateの呼び出し
+  const [blog, setblog] = useRecoilState(blogState)
+  const topArticles = useMemo(() => blog.topArticles, [blog.topArticles])
+
+  useEffect(() => {
+    const getter = async () => {
+      const res = await fetch('/api/analytics/top_article').catch((err) => {
+        console.error(err)
+        throw new Error(err)
+      })
+      const data: TopArticles = await res.json()
+      setblog((state) => ({
+        ...state,
+        topArticles: data
+      }))
+    }
+
+    // まだランキングが未取得だったらgetter関数を呼び出す
+    if (!topArticles) {
+      getter()
+    }
+  }, [setblog, topArticles])
+
+  return {
+    topArticles
+  }
+}
+```
+
+これで完成。
+
+クッソ楽。
+
+一回取得してしまえば内容が Recoil で作成した Global State に格納されるので 2 回目以降は取得する必要がなくなった。
+
+いい話。
+
+## まとめ
+
+今回は useState 的に呼び出すやり方で試したけど他にもいろいろやり方があるらしい。
+
+今回は非同期処理を Hooks で行ったけど Recoil の中でも出来る。
+
+Redux のように action を書いて reducer を書いて…みたいな事をやらなくて良いのは楽だけど管理する State が大きければ大きい程 Redux を使いたくなりそう。
+
+あと dev tools が充実してくれれば最高ですね。
+
+以上。

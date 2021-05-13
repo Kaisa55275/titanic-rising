@@ -1,0 +1,167 @@
+---
+title: 'ブログの見た目を整える'
+published: true
+draft: false
+date: 20200812
+ogp: ''
+tag:
+  - Tech
+  - TypeScript
+  - CSS
+---
+
+まあ俺デザイナーじゃないしイケてるかどうかは置いといてさ
+
+成果物はもちろんこのブログです
+
+## お前のプロフィールページ情報量少なくね？
+
+エンジニアのポートフォリオみたいに SNS とか GitHub とかのアイコンとか貼りたいけど svg とか選ぶのクソめんどいので[react-icons](https://github.com/react-icons/react-icons)使うね。
+
+アイコン足すだけだしプロフィールページのコンポーネントに殴り書いてもいいんだけどせっかく心の余裕があるしアイコンリンクを並べるだけのコンポーネントを作る。
+
+全然関係ないけどセブンで売ってるみかん氷、うまいよね。
+
+## いざ、アイコンをインポート
+
+だけど Twitter は貼りたくないし GitHub くらいしかマジでないわ…
+
+てか react-icons 楽すぎる
+
+```tsx
+// ProfileIcons.tsx
+
+import React from 'react'
+import { FaGithub } from 'react-icons/fa'
+
+const ProfileIcons: React.FCX = (props) => {
+  return (
+    <div>
+      <a href="https://github.com/Kaisa55275" target="_blank" rel="noreferrer">
+        <FaGithub />
+      </a>
+    </div>
+  )
+}
+
+export default ProfileIcons
+```
+
+このコンポーネントをプロフィールページで呼んであげると無事 GitHub 現れたわね！
+
+まだスタイル書いてないから訳わかんないとこに出ちゃうあるある〜〜
+
+<img
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383435/titanicrising.jp/style-titanic-blog/_2020-08-12_22.19.37_skt8dt.png`}
+  alt="_2020-08-12_22.19.37.png"
+  width={1220}
+  height={548}
+/>
+
+## スタイルをどう書くか
+
+React のスタイルの書き方は諸説あるが自分は BEM に馴染んでいるので CSS in JS で書いている。
+
+なんか CSS in JS 嫌いな人多いよね。なんでだろう？？
+
+とりあえずクラス名を追加する。後で自動で props に付与されるものを使う。
+
+```tsx
+// ProfileIcons.tsx
+
+import React from 'react'
+import { FaGithub } from 'react-icons/fa'
+
+const ProfileIcons: React.FCX = (props) => {
+  return (
+    <div className={props.className}>
+      <a
+        className={`${props.className}__icon`}
+        href="https://github.com/Kaisa55275"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <FaGithub />
+      </a>
+    </div>
+  )
+}
+
+export default ProfileIcons
+```
+
+コンポーネントにつけている FCX 型については以下を参照
+
+[!!BOOKMARK!!React.FC 型を拡張する - Qiita](https://qiita.com/Takepepe/items/f66c7e2e1d22b431f148)
+
+なんか通常？の styled-components の書き方だと styled.div なんかを定義して使うけど default export 時に styled-components の引数に指定すると props.className をそのままスタイル付けできる。
+
+もちろんスコープもバッチリ切れる。
+
+子要素の命名は BEM 使うとすんなりですな！！！ははは！！！
+
+```tsx
+// ProfileIcons.tsx
+
+import React from 'react'
+import { FaGithub } from 'react-icons/fa'
+import styled from 'styled-components'
+
+const ProfileIcons: React.FCX = (props) => {
+  return (
+    <div className={props.className}>
+      <a
+        className={`${props.className}__icon`}
+        href="https://github.com/Kaisa55275"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <FaGithub />
+      </a>
+    </div>
+  )
+}
+
+export default styled(ProfileIcons)`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &__icon {
+    transition: 0.2s;
+    margin: 0 12px;
+
+    &:hover {
+      transform: scale(1.2);
+      opacity: inherit;
+    }
+
+    > svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+`
+```
+
+てかシンタックスハイライト効かないとみづらいね…VSCode だと実際はいい感じよ！
+
+<img
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383435/titanicrising.jp/style-titanic-blog/_2020-08-12_22.39.04_rchjl2.png`}
+  alt="_2020-08-12_22.19.37.png"
+  width={1050}
+  height={746}
+/>
+
+## 完成とは
+
+はい出来た〜〜〜ホバーすると大きくなるよ！
+
+<img
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383434/titanicrising.jp/style-titanic-blog/_2020-08-12_22.33.18_dh9ud9.png`}
+  alt="_2020-08-12_22.19.37.png"
+  width={870}
+  height={592}
+/>
+
+いや、アイコン一個足しただけで全然見た目整えてなくね？？？？？？？

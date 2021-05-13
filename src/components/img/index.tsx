@@ -1,7 +1,7 @@
 import { useAmp } from 'next/amp'
-import React, { ComponentProps } from 'react'
+import React from 'react'
 import styled from 'styled-components'
-import Image from 'next/image'
+import Image, { ImageProps } from 'next/image'
 
 type Props = {
   src: string
@@ -9,17 +9,20 @@ type Props = {
   width: number
   height: number
   layout?: string
-} & Pick<ComponentProps<typeof Image>, 'loading'>
+  nextImageProps?: Partial<ImageProps> & {
+    layout?: 'fixed' | 'intrinsic' | 'responsive' | undefined
+  }
+}
 
 const Component: React.FCX<Props> = (props) => {
   const isAmp = useAmp()
+  const src = props.src.startsWith('//') ? 'https:' + props.src : props.src
+
   if (isAmp) {
     return (
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       <amp-img
         className={props.className}
-        src={props.src}
+        src={src}
         alt={props.alt}
         width={props.width}
         height={props.height}
@@ -29,21 +32,53 @@ const Component: React.FCX<Props> = (props) => {
   }
 
   if (props.src.startsWith('data:image')) {
-    return <img className={props.className} src={props.src} alt={props.alt} />
+    return (
+      <img
+        className={props.className}
+        width={props.width}
+        height={props.height}
+        src={src}
+        alt={props.alt}
+      />
+    )
+  }
+
+  if (props.layout === 'fill') {
+    return (
+      <Image
+        src={src}
+        alt={props.alt}
+        loading={props.nextImageProps?.loading || 'lazy'}
+        objectFit={props.nextImageProps?.objectFit}
+        layout="fill"
+      />
+    )
   }
 
   return (
-    <Image
-      className={props.className}
-      src={props.src}
-      alt={props.alt}
-      width={props.width}
-      height={props.height}
-      loading={props.loading || 'lazy'}
-    />
+    <div
+      className={[
+        props.className,
+        `${props.className}--next_image`,
+        'next-image-container'
+      ].join(' ')}
+    >
+      <Image
+        src={src}
+        alt={props.alt}
+        width={props.width}
+        height={props.height}
+        loading={props.nextImageProps?.loading || 'lazy'}
+        layout={props.nextImageProps?.layout || 'responsive'}
+        {...props.nextImageProps}
+      />
+    </div>
   )
 }
 
-const StyledComponent = styled(Component)``
+const StyledComponent = styled(Component)`
+  width: 100%;
+  height: auto;
+`
 
 export const Img = StyledComponent

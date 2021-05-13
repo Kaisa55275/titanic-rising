@@ -1,0 +1,1 @@
+export { NarrowPostCard } from './NarrowPostCard'

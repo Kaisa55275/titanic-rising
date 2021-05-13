@@ -1,0 +1,238 @@
+---
+title: 'アンプの話'
+published: true
+draft: false
+date: 20200822
+ogp: 'https://res.cloudinary.com/dw86z2fnr/image/upload/v1620382979/titanicrising.jp/about-amp/jc_120_front_main_drxmlu.jpg'
+tag:
+  - Tech
+---
+
+フジロック配信みた？
+
+今も 2 日目の配信見ながらだらだら書いている。
+
+なんか昨日配信されてたジャックホワイトのギターアンプがめっちゃ渋くて僕もアンプの話がしたくなってしまいました。
+
+## そもそも AMP とは？
+
+Accelerated Mobile Pages の略です。
+
+最近スマホで Google 検索するとやたら表示が速いページがインデックスされていますよね？
+
+あれです。
+
+⚡️ マークが目印！
+
+<img
+  width={1125}
+  height={1881}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620382980/titanicrising.jp/about-amp/IMG_1551_lqanm9.jpg`}
+/>
+
+期待できる効果はまあ単純に SEO とかかな？
+
+UX もかなり高いし。
+
+スムーズの記事ページも一応 AMP に対応している。
+
+## Notion Blog を AMP に対応させる
+
+まあ Notion Blog をと言うよりは Next をだね。
+
+next/amp と言うすんばらしい物がデフォルトで用意されているのでこれを使っていく。
+
+[next/amp | Next.js](https://nextjs.org/docs/api-reference/next/amp)
+
+使うのは本当に簡単で、config という named export を NextPage コンポーネントに足すだけ！
+
+```tsx
+// pages/[slug].tsx
+
+export const config = {
+  amp: true
+}
+
+const RenderPost: NextPage = () => {
+  return <div>view here</div>
+}
+
+export default RenderPost
+```
+
+するとコンパイラが AMP Validation をして怒ってくれるのでこれを潰していく。
+
+AMP 対応は基本こんな作業になる。
+
+いや、めんどいわ…
+
+<img
+  width={966}
+  height={414}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620382979/titanicrising.jp/about-amp/_2020-08-22_23.51.30_f5k8qo.png`}
+/>
+
+引っ掛かりポイントとしては styled-components のサーバースタイルシートを\_document に記述するやつ。
+
+amp のスタイルシートは amp-cuctom 属性を持っていなければならないので書き換えが必要。
+
+```tsx
+import React from 'react'
+import NextDocument, {
+  Html,
+  Head,
+  Main,
+  NextScript,
+  DocumentContext,
+  DocumentInitialProps
+} from 'next/document'
+import { ServerStyleSheet } from 'styled-components'
+
+type Props = {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  styles: Array<React.ReactElement<{}>>
+}
+
+class MyDocument extends NextDocument<Props> {
+  static async getInitialProps(
+    ctx: DocumentContext
+  ): Promise<DocumentInitialProps> {
+    const sheet = new ServerStyleSheet()
+    const originalRenderPage = ctx.renderPage
+
+    try {
+      ctx.renderPage = () =>
+        originalRenderPage({
+          enhanceApp: (App) => (props) =>
+            sheet.collectStyles(<App {...props} />)
+        })
+
+      const initialProps = await NextDocument.getInitialProps(ctx)
+      const initialStyles =
+        initialProps.styles instanceof Array ? initialProps.styles : []
+      // ここでガッチャンこ！！！
+      const styles = [...initialStyles, ...sheet.getStyleElement()]
+      return {
+        ...initialProps,
+        styles
+      }
+    } finally {
+      sheet.seal()
+    }
+  }
+
+  render(): JSX.Element {
+    return (
+      <Html lang="ja" prefix="og: http://ogp.me/ns#">
+        <Head />
+        <body>
+          <noscript>You need to enable JavaScript to run this app.</noscript>
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    )
+  }
+}
+
+export default MyDocument
+```
+
+これで styles を自動的に amp-custom 属性をつけて一個のスタイルタグで出力してくれる。賢い…
+
+## Render 部分
+
+いやーここがまじでめんどい。
+
+特に amp-img。
+
+width と height でアス比固定しなきゃいけないんだよね。
+
+とりあえず amp かどうかは以下のフックで判断できる。
+
+```tsx
+import { useAmp } from 'next/amp'
+
+// ampの場合はtrue
+const isAmp = useAmp()
+```
+
+レンダラーには amp の場合は amp-img を出すように条件分岐させる。
+
+てかまあ amp-img に限らず全部。
+
+amp-html の型定義めんどかったので react-amphtml 使ったけどイマイチなので本当は amp.d.ts とか作って書いた方がいい。
+
+```tsx
+// components/Post.tsx
+
+// 略
+import * as Amp from 'react-amphtml'
+
+if (isAmp) {
+  child = isImage ? (
+    <div className="fixed-container">
+      <Amp.AmpImg
+        specName="default"
+        key={!useWrapper ? id : undefined}
+        layout="responsive"
+        width="400"
+        height="400"
+        src={`/api/asset?assetUrl=${encodeURIComponent(
+          display_source
+        )}&blockId=${id}`}
+      />
+    </div>
+  ) : (
+    <div className="fixed-container">
+      <Amp.AmpVideo
+        specName="default"
+        key={!useWrapper ? id : undefined}
+        src={`/api/asset?assetUrl=${encodeURIComponent(
+          display_source
+        )}&blockId=${id}`}
+        controls={!isImage}
+        alt={`An ${isImage ? 'image' : 'video'} from Notion`}
+        loop={!isImage}
+        muted={!isImage}
+        autoPlay={!isImage}
+        // style={childStyle}
+        width="400"
+        height="400"
+      />
+    </div>
+  )
+}
+```
+
+いや大変すぎる。もしかしたら数ページバリデーション通ってないかも笑笑
+
+とりあえず画像が多いきんぐの記事は OK 頂けたわね！
+
+<img
+  width={2536}
+  height={1262}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620382979/titanicrising.jp/about-amp/_2020-08-22_23.27.17_bugeon.png`}
+/>
+
+プレビューはこんな感じ！
+
+<img
+  width={690}
+  height={370}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620382979/titanicrising.jp/about-amp/_2020-08-22_23.27.27_xzeh9m.png`}
+/>
+
+## 好きなアンプは？
+
+JC-120。操作簡単だから。
+
+以上。
+
+<img
+  width={399}
+  height={330}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620382979/titanicrising.jp/about-amp/jc_120_front_main_drxmlu.jpg`}
+/>
+
+[Roland - JC-120 | Jazz Chorus](https://www.roland.com/jp/products/JC-120/)

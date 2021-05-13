@@ -1,24 +1,18 @@
 import { atom } from 'recoil'
-import { fetchStatus, FetchStatus } from 'types/data/fetchStatus'
+import { Post } from 'types/data/blog'
 import { TopArticles } from 'types/data/topArticles'
 
 export type BlogState = {
   topArticles: TopArticles
-  draftAuth: {
-    status: FetchStatus
-    value: boolean
-  }
+  posts: Post[]
 }
 
-const initialState: BlogState = {
+export const blogInitialState: BlogState = {
   topArticles: null,
-  draftAuth: {
-    status: fetchStatus.UNFETCHED,
-    value: null
-  }
+  posts: []
 }
 
 export const blogState = atom({
   key: 'blog',
-  default: initialState
+  default: blogInitialState
 })

@@ -1,0 +1,321 @@
+---
+title: 'Notion Blogに人気記事ランキングを追加する'
+published: true
+draft: false
+date: 20200919
+ogp: 'https://firebasestorage.googleapis.com/v0/b/titanic-rising.appspot.com/o/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88%202020-09-19%2013.09.39.png?alt=media&token=495c7193-5a57-459c-8758-42ee14f08039'
+tag:
+  - Tech
+  - TypeScript
+---
+
+ブログの終わりが唐突という貴重な意見をいただいたので下にコンテンツを追加していこうと思う。
+
+まあ著者情報とかがベタだけど著者俺しかいないしちょっと実装コストかかるの何が良いかなって考えたときにやっぱ人気記事ランキングかなという結論にいたった。
+
+流れとしては
+
+1. Google Analytics でページビューを計測
+
+2. Google Analytics Reporting Api をサーバーサイドで叩いてそのデータを取得
+
+3. そのサーバーの Api をクライアントで叩いて多い順に表示
+
+という感じになる
+
+## アナリティクスのビュー ID をメモる
+
+Reporting Api を叩くためにはアナリティクスのビュー ID が必須なのでアナリティクスの管理画面でこれをメモっておく
+
+<img
+  width={1344}
+  height={1472}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383434/titanicrising.jp/popular-article/_2020-09-19_11.13.49_xaubek.png`}
+/>
+
+次に Google Cloud Platform から Analytics Reporting Api を導入し、サービスアカウントの認証情報をダウンロードしておく。
+
+形式は無難に json を選択しておく。TypeScript でしっかりと型が入ってくるので。
+
+<img
+  width={1560}
+  height={1058}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383434/titanicrising.jp/popular-article/_2020-09-19_11.24.38_txcxqc.png`}
+/>
+
+これでアナリティクスからデータを取得する準備は整った。
+
+## API 作るよ
+
+アナリティクスの Reporting API からデータを引っ張ってきて加工してクライアントに返す所までサーバーで行う。
+
+api ディレクトリに以下のようなファイルを作成。
+
+例外処理とかは割愛…
+
+```tsx
+// pages/api/top_article.ts
+
+import { NextApiRequest, NextApiResponse } from 'next'
+import { google } from 'googleapis'
+// さっき保存したJSON
+import credentials from './keys.json'
+import getBlogIndex from 'src/lib/notion/getBlogIndex'
+import { postIsPublished } from 'src/lib/blog-helpers'
+import getNotionUsers from 'src/lib/notion/getNotionUsers'
+import { Posts } from 'types/data/notion_blog'
+
+// さっきメモしたビューID
+const VIEW_ID = 'XXXXXXX'
+
+const getClient = async () =>
+  google.auth.getClient({
+    credentials,
+    scopes: 'https://www.googleapis.com/auth/analytics.readonly'
+  })
+
+const getTopArticles = async () => {
+  const client = await getClient()
+  const analyticsreporting = google.analyticsreporting({
+    version: 'v4',
+    auth: client
+  })
+
+  // 欲しいデータのクエリ
+  const res = await analyticsreporting.reports.batchGet({
+    requestBody: {
+      reportRequests: [
+        {
+          viewId: VIEW_ID,
+          dateRanges: [
+            {
+              startDate: '30daysAgo',
+              endDate: 'today'
+            }
+          ],
+          dimensions: [
+            {
+              name: 'ga:pagePath'
+            }
+          ],
+          metrics: [
+            {
+              expression: 'ga:pageviews'
+            }
+          ]
+        }
+      ]
+    }
+  })
+  return res.data
+}
+
+// 記事データの取得
+const getAricles = async () => {
+  const postsTable = await getBlogIndex()
+
+  const authorsToGet = new Set()
+  const posts: Posts = Object.keys(postsTable)
+    .map((slug) => {
+      const post = postsTable[slug]
+      if (!postIsPublished(post)) {
+        return null
+      }
+      post.Authors = post.Authors || []
+      for (const author of post.Authors) {
+        authorsToGet.add(author)
+      }
+      return post
+    })
+    .filter(Boolean)
+
+  const { users } = await getNotionUsers([...authorsToGet])
+
+  posts.map((post) => {
+    post.Authors = post.Authors.map((id) => users[id].full_name)
+  })
+
+  return posts
+}
+
+const topArticle = async (
+  _req: NextApiRequest,
+  res: NextApiResponse
+): Promise<void> => {
+  // クエリと記事データの取得を同時に行う
+  const [topArticles, articles] = await Promise.all([
+    getTopArticles(),
+    getAricles()
+  ]).catch((err) => {
+    throw new Error(err)
+  })
+
+  if (topArticles && articles) {
+    const targetRows = topArticles.reports?.[0].data.rows
+
+    const topArticlesObj = targetRows
+      // オブジェクトの型を決める
+      .map((val) => ({
+        article: articles.find((article) =>
+          val.dimensions[0].includes(article.Slug)
+        ),
+        path: val.dimensions[0],
+        count: Number(val.metrics[0].values[0])
+      }))
+      // ブログの記事だけにしぼる
+      .filter((val) => val.path.includes('/blog/') && !val.path.includes('__'))
+      // 人気順でソート
+      .sort((a, b) => b.count - a.count)
+
+    // 長さを3つにする
+    topArticlesObj.length = 3
+
+    res.status(200).send(topArticlesObj)
+
+    return
+  }
+
+  res.send(204)
+}
+
+export default topArticle
+```
+
+これをクライアントから叩いてあげる。
+
+## フロントの実装
+
+楽なので React Hooks を使ってコンポーネントに流し込む実装にする。
+
+まずは API を叩く useTopArticles フックを作成。
+
+```tsx
+// useTopArticle.ts
+import { useEffect, useState } from 'react'
+import { TopArticles } from 'types/data/top_articles'
+
+export const useTopArticles = () => {
+  const [topArticles, setTopArticles] = useState<TopArticles>([])
+
+  useEffect(() => {
+    const getter = async () => {
+      const res = await fetch('/api/analytics/top_article').catch((err) => {
+        console.error(err)
+        throw new Error(err)
+      })
+      const data: TopArticles = await res.json()
+      setTopArticles(data)
+    }
+
+    getter()
+  }, [])
+
+  return {
+    topArticles
+  }
+}
+```
+
+このフックをコンポーネント側で呼び出してあげる。
+
+ゴミみたいなスタイリングは許して…
+
+```tsx
+// TopArticles.tsx
+import dayjs from 'dayjs'
+import Link from 'next/link'
+import React from 'react'
+import styled from 'styled-components'
+import { useTopArticles } from './useTopArticles'
+
+const TopArticles: React.FCX = (props) => {
+  const { topArticles } = useTopArticles()
+  return (
+    <ul className={props.className}>
+      {topArticles.map((topArticle) => (
+        <li key={topArticle.path}>
+          <Link href={topArticle.path}>
+            <a className={`${props.className}-link`}>
+              <div className={`${props.className}-link__thumb`}>
+                <img
+                  src={
+                    topArticle.article.Ogp || require('assets/images/tr.jpg')
+                  }
+                  alt={topArticle.article.Page}
+                />
+              </div>
+              <span className={`${props.className}-link__info`}>
+                <strong>{topArticle.article.Page}</strong>
+                <time>
+                  {dayjs(topArticle.article.Date).format('YYYY-MM-DD')}
+                </time>
+              </span>
+            </a>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export default styled(TopArticles)`
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  width: 100%;
+
+  & > li {
+    width: 32%;
+    @media screen and (max-width: 600px) {
+      width: 100%;
+      margin-bottom: 16px;
+    }
+  }
+
+  &-link {
+    width: 100%;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
+
+    &__thumb {
+      height: 120px;
+      overflow: hidden;
+    }
+
+    &__info {
+      display: block;
+      padding: 20px 10px;
+
+      > strong {
+        font-size: 1.4rem;
+        display: block;
+      }
+    }
+  }
+`
+```
+
+このコンポーネントを記事下部で読み込んであげれば現れたわね！！！！
+
+```tsx
+// Post.tsx
+<article>
+	略
+</article>
+// 追加！
+<div className="top-articles">
+  <h2>人気の記事</h2>
+  <TopArticles />
+</div>
+```
+
+まあ見た目とかは適当なので許して！
+
+あと計測し始めたのが昨日なのでランキングもちょっとガバガバかも…
+
+<img
+  width={1844}
+  height={1372}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383434/titanicrising.jp/popular-article/_2020-09-19_13.09.39_yqoi0z.png`}
+/>
+
+以上！

@@ -1,0 +1,85 @@
+---
+title: 'そのUI、自分で直せない？'
+published: true
+draft: false
+date: 20200904
+ogp: 'https://firebasestorage.googleapis.com/v0/b/titanic-rising.appspot.com/o/animo.png?alt=media&token=ec87843e-79a0-450f-bb16-7aec6774a24a'
+tag:
+  - Movies
+---
+
+最近おすすめされたドラマをみるために FOD プレミアム契約したんだけど、UI が使いにくくて結構ストレスたまる。
+
+これが実際の画面なんだけどなんかこのちゃっちい標準モードかフルスクリーンにするかの二択しかない。
+
+<img
+  width={1781}
+  height={915}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383431/titanicrising.jp/fix-uiself/_2020-09-02_13.03.24_uhme06.png`}
+/>
+
+自分は職場でサブモニターを縦で使っているのでフルスクリーンで視聴出来ない。
+
+となるとこの標準モード 1 択なんだけど画面がちっさくて全然快適じゃない。
+
+こういう時は自分で直すしかないですね！
+
+## Amino を使う
+
+[!!BOOKMARK!!Amino: Live CSS Editor](https://chrome.google.com/webstore/detail/amino-live-css-editor/pbcpfbcibpcbfbmddogfhcijfpboeaaf)
+
+Amino は自分でサイト毎にスタイルシートを上書きできる拡張機能。
+
+会社のプロダクトの管理画面もこれで上書きしたりして快適に使ってます。
+
+まずはデベロッパーツールで要素を取得していく。
+
+#video_container という div に video 要素がラップされているようだ。
+
+<img
+  width={1426}
+  height={722}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383432/titanicrising.jp/fix-uiself/_2020-09-02_13.08.56_y9gpzc.png`}
+/>
+
+コードをみてみると width と height が決め打ちされてますね。
+
+ここで Amino を開いて配下要素ごと important で倍の大きさを指定します。
+
+<img
+  width={974}
+  height={796}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383432/titanicrising.jp/fix-uiself/_2020-09-02_13.15.01_kahnvv.png`}
+/>
+
+いい感じにくっそでかくなったけどなんか寄ってる
+
+<img
+  width={1134}
+  height={594}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383431/titanicrising.jp/fix-uiself/_2020-09-02_13.16.15_aieizt.png`}
+/>
+
+追加でビデオコンテナの Wrapper 要素である#fod_player の width を固定ではなく自動にしてあげます。
+
+<img
+  width={986}
+  height={682}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383431/titanicrising.jp/fix-uiself/_2020-09-02_13.19.26_lqoxhn.png`}
+/>
+
+いい感じになりましたね。
+
+<img
+  width={3578}
+  height={1880}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383432/titanicrising.jp/fix-uiself/_2020-09-02_13.19.02_kqutsn.png`}
+/>
+
+これで問題なく画面下段に TweetDeck、上段に FOD という盤石の体勢で挑めます。
+
+仕事中何みてんだよみたいなツッコミは無しで…
+
+まあ今回思ったけど Netflix とか Amazon プライムとか自分が普段利用している動画系サブスクサービスの UI は流石にしっかりしてるなあ。
+
+あと FOD の字幕の出し方全然わかんないんだけどもしかしてないの？

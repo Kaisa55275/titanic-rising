@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "titanic-rising",
+  "private_key_id": "f67dbf52144cca81f9927a6bc950c3b64c37cc14",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDJNRrDhGmRvG60\nPdNYsRYfYzwoA/hR1HoZ+qqaY2KHo+ED5OAXFd9hSXFjHbGoFjOaLkfZmKScJDZz\nyyiun7mpCGP3n8NztIWTY+RcOjC/hXamSOhGcobHsPe7g7qmkW/f1Bk7Ou1HCxOi\nlwe/8do2uotCTWN5kxjt+LJXv/QWkndMB8O3ds9oD0xgF74GmCAputX2lg9yAF/v\nHg2hDLIFI66lxKNO4l7MjWHc681MPq09CamghbsPXe43kceWnxJJ9FhfRSpgOBHX\ncv5UsfQJbWciL6jI2fmUzexXOTnWqVLG0+fEHEZzy8mR7KO5jpWLD/EryiB3tUVe\nKfoobuHnAgMBAAECggEADE+thY0SkJJBC9JEnkanneAKjEBB72/a0MAftDakjrwe\nRoi4lXEHLAK8Z14nwqspGSP/zXaji9JDaq5hnN21FHyo8TvbT7cZ/Ty9ek8tMGrQ\nKbiITdcwHAPeBKE4yHxZpg5qRM+EOTaaSvaGyN3ZhkO/xZzKm2O+wMDY2LmsC71q\nsOQeohUwCdHkc5Rkj2I/C0W6qXJTUBJufnSRfE+/yxnipWa/AB3pQztvAMjq27S6\nOsslf3wNcAOFAEAZjZuJKqjtFAdZCUmx27VgNmB6nVfECwKPxWPN9RMLPPb3bhju\nmPAYQfnLZSSpJ8iDwgC1o9I49OuHIdsnN+1aELqK4QKBgQDwrdsKbms18hbzT+Yl\nvCmtINKIYcpEiz0glwolH4czM4LlXBkALrHy0zsjaX55RuA058QhzcygBKE6LMjn\nJfr2d92ekuRjZe0eHnF7wflriD3ffM6+58pcC6x1ndNl7INrEEVoy8G4/uxR6Vk8\nozKseucw0e/+JJWkYz1CseiaaQKBgQDWBAMhVQ8KAs5zhuIKc57w1MOpsRQC7YvM\nPz1og3xLsTe4m2zK6DTuIqU4sPlqtVbw5PPL1jL7X3TBFIu666fjwZyt/aK4Yarl\nE9X518CDiVU8IxsFt3bSuPJ1EFXXrVlQ7i5nWD0ZNQdpldPpKTnXqiaoqDeX1JLb\nIjbFoWLvzwKBgCcsdQmGnWajZ77kk1YzASmPvRS7rftoGmPykZEnR4865CRG0D7q\nWsZmQSrrYc2Fjrqtuoux/otRFZjtbynIUcfKDMVhrVDMZ0LOu7PkB5/MBh4ZJ2GF\nQremosRmEuF1FJLZjCKZf4eH3pkafQ7UlUvjmTumAAUCmWSvTmpLoMt5AoGAPhhF\n7DrotSfhTMW6+ftYB1pENw0I2Fyh7i3/HD7iJngRyb9WznyXNuzYcV1v0JUy14wm\nbGMGwcaNcqQKcr6DJOL9GcJ4nvS/h928fNQrqD6Fe4BYC82SbUt6FZsavQwv2Ppy\nfkus1o57SxhMtt7eSIO22cKM9sGXpnsD102fDiMCgYBo5yLeD/nWh8vPWmZtOPTQ\nOn0pTSkW0dNY3Bvo3juRAIdgbk797YUrD3aSeMDhMOdSa+b+3B7AKgeIDgGacLS7\n792bbpEW+56OOOSmv+fQPot3/EF6zLX53P/GHVkfdYZcHRGUvOjf1W6jcNRWzjlq\nLBxmdQOx+PmAXQ869dzrdQ==\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-9c7az@titanic-rising.iam.gserviceaccount.com",
+  "client_id": "114029337594925389902",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-9c7az%40titanic-rising.iam.gserviceaccount.com"
+}
