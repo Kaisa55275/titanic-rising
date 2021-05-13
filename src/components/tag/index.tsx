@@ -1,14 +1,12 @@
 import React from 'react'
-import Link from 'next/link'
 import styled from 'styled-components'
 
 type Props = {
-  slug: string
   color: string
   title: string
 }
 
-const Tag: React.FCX<Props> = (props) => {
+const Component: React.FCX<Props> = (props) => {
   const getBlackOrWhite = (hexcolor: string) => {
     const r = parseInt(hexcolor.substr(1, 2), 16)
     const g = parseInt(hexcolor.substr(3, 2), 16)
@@ -18,28 +16,23 @@ const Tag: React.FCX<Props> = (props) => {
   }
 
   return (
-    <Link
-      key={props.slug}
-      href={{ pathname: '/blog', query: { tag: props.slug } }}
+    <span
+      className={props.className}
+      style={{
+        backgroundColor: props.color,
+        color: `${getBlackOrWhite(props.color || '#ffffff')}`
+      }}
     >
-      <a
-        className={props.className}
-        style={{
-          backgroundColor: props.color,
-          color: `${getBlackOrWhite(props.color || '#ffffff')}`
-        }}
-      >
-        {props.title}
-      </a>
-    </Link>
+      {props.title}
+    </span>
   )
 }
 
-export default styled(Tag)`
+const StyledComponent = styled(Component)`
   font-size: 1.2rem;
   padding: 0 7px;
   margin: 4px 0px;
-  margin-left: 5px;
+  margin-right: 5px;
   height: 24px;
   line-height: 22px;
   display: block;
@@ -47,8 +40,11 @@ export default styled(Tag)`
   font-weight: bold;
   text-decoration: underline;
 `
+
+export const Tag = StyledComponent
+
 export const TagsWrapper = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   flex-wrap: wrap;
 `

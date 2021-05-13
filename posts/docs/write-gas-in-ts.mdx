@@ -1,0 +1,256 @@
+---
+title: 'GASをローカルで開発する'
+published: true
+draft: false
+date: 20201009
+ogp: 'https://firebasestorage.googleapis.com/v0/b/titanic-rising.appspot.com/o/gas-ts.png?alt=media&token=d926f52d-6167-4201-bef4-2f204fa4f1a3'
+tag:
+  - Tech
+---
+
+スムーズ社ではデータ分析の基板周辺は Google のプロダクトを中心に使っていて、Google App Script(GAS)が真価を発揮しそうな気がしたので環境構築してみた。
+
+本職プログラマではないけど GAS は書くよ！みたいな人も多いのでは。
+
+## 全てはエディタで書くために
+
+GAS の Web UI はクソなのでエディタで書きたい。自分は普段 Visual Studio Code で書いてるのでここでかけたら最高。
+
+まずは Google 製の CLI ツールである clasp をインストールする。
+
+[!!BOOKMARK!!google/clasp](https://github.com/google/clasp)
+
+```tsx
+npm install @google/clasp -g
+```
+
+とりあえずこれで clasp コマンドが通るようになるはずなのでログインしてくよ。
+
+```tsx
+clasp login
+```
+
+上記のコマンドを打つとブラウザが立ち上がってログインを求められるのでログインする。無事ログインに成功すると Saved the credentials to〜みたいなメッセージが表示されるのでこれで下準備は完了。
+
+次に GAS プロジェクトを作成していく。プロジェクトを作成するディレクトリまで飛んで以下のコマンドを打つ。
+
+```tsx
+clasp create
+```
+
+これで.clasp.json 等の必要なセットアップファイルが現れるので app.js 等好きな命名でスクリプトファイルをプロジェクトフォルダ内に作成し、clasp push コマンドで GAS のリモートワークスペース上に配置&実行することが出来る（clasp run コマンドでも可だが試していない）。
+
+## 型が欲しい
+
+型が欲しくなるのは当たり前（適当）。
+
+GAS でスクリプト言語のプログラミング初めてやる人もせっかくなので型付きでやるべし（横暴）。
+
+コンパイル前後のスクリプトファイルを分ける為以下のコマンドを打ってディレクトリを作成しておく。
+
+```tsx
+mkdir src dist
+```
+
+node_modules が必要になるのでいつも通り npm init からのエンター連打で package.json を作成する。以下のコマンドで必要なパッケージを追加しておく。
+
+```json
+yarn add @types/google-apps-script rimraf
+```
+
+ここで追加する@types/google-apps-script がメインで使用する GAS のグローバル宣言を内包した型定義ファイルになる。
+
+また、型とコンパイルの設定をするため tsc --init コマンドを叩いて tsconfig.json も作成する。
+
+```tsx
+tsc --init
+```
+
+以下のようなディレクトリ構成になるはず。これで最強（だと思う）の GAS 環境ができた。
+
+```markdown
+.
+├── src
+│ └── ここにスクリプトファイルを作成して書く
+├── dist
+│ └── ここに/src ディレクトリのファイルがコンパイルされる
+├── package.json
+├── node_modules
+│ └── modules
+├── tsconfig.json
+├── .clasp.json
+└── appscript.json
+```
+
+## 試しに動かしてみる
+
+試しにスプレッドシートに書き込んでみる。
+
+まずは適当なスプレッドシートを作って URL の/spreadsheets/以降の文字列をメモっておく。これがスプレッドシート ID になる。
+
+<img
+  width={1778}
+  height={824}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383439/titanicrising.jp/write-gas-in-ts/_2020-10-09_10.23.03_lgadcm.png`}
+/>
+
+次にコード側。
+
+GAS を使ってスプレッドシートに何か書き込みたい時は SpreadsheetApp を使用する。
+
+これら GAS の interface はアンビエント宣言で読み込まれているので手動で読み込む必要はなし。
+
+ここでは D の 6 列にあははは！って書き込んでみる。
+
+```tsx
+function writeSpreadSheet(): void {
+  const ss = SpreadsheetApp.openById('***さっきのスプレッドシートID ***')
+  const targetSheet = ss.getSheetByName('***シート名***')
+
+  if (targetSheet) {
+    targetSheet.getRange('D6').setValue('あははは！')
+  }
+}
+```
+
+以下のコマンドを走らせてプッシュ。
+
+```tsx
+rimraf ./dist && tsc && clasp push
+```
+
+次に GAS を開く。
+
+```tsx
+clasp open
+```
+
+するとさっきのコード（コンパイル後）が置かれているので再生ボタンを押して実行！
+
+<img
+  width={667}
+  height={460}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383438/titanicrising.jp/write-gas-in-ts/_2020-10-09_10.36.36_hqca9a.png`}
+/>
+
+無事書き込めてますね。
+
+<img
+  width={1778}
+  height={824}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383438/titanicrising.jp/write-gas-in-ts/_2020-10-09_10.24.46_fveoqz.png`}
+/>
+
+## アンコール
+
+もうちょい色々やれるアピールをするためにおなじみのスターウォーズ API を使ってスプレッドシートに書き込む処理を実装してみる。
+
+```tsx
+function writeSpreadSheet(): void {
+  const ss = SpreadsheetApp.openById('***さっきのスプレッドシートID ***')
+  const targetSheet = ss.getSheetByName('***シート名***')
+
+  interface SWAPIRes {
+    name: string
+    hair_color: string
+    skin_color: string
+    eye_color: string
+    birth_year: string
+    gender: string
+  }
+
+  const arr: SWAPIRes[] = []
+
+  // API叩くくん
+  const fetcher = (num: number) => {
+    const res = UrlFetchApp.fetch(`https://swapi.dev/api/people/${num}/`)
+    const data = JSON.parse(res.getContentText())
+    return data
+  }
+
+  // 10番目まで取得してarrに追加
+  for (let i = 1; i <= 10; i += 1) {
+    arr.push(fetcher(i))
+  }
+
+  if (targetSheet) {
+    const setter = (target: string, value: string) => {
+      targetSheet.getRange(target).setValue(value)
+    }
+
+    // 1列目定義
+    setter(`A1`, 'name')
+    setter(`B1`, 'gender')
+    setter(`C1`, 'eye_color')
+    setter(`D1`, 'hair_color')
+
+    // arrに合わせて実行
+    arr.forEach((d, i) => {
+      const targetIndex = i + 2
+      setter(`A${targetIndex}`, d.name)
+      setter(`B${targetIndex}`, d.gender)
+      setter(`C${targetIndex}`, d.eye_color)
+      setter(`D${targetIndex}`, d.hair_color)
+    })
+  }
+}
+```
+
+これで実行すると
+
+<img
+  width={1274}
+  height={794}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383440/titanicrising.jp/write-gas-in-ts/_2020-10-09_11.01.49_kxaugh.png`}
+/>
+
+こんな感じでスターウォーズの登場人物達の情報 10 人分が載ったスプレッドシートが一瞬で完成！（いらね〜〜〜）
+
+## もちろん Big Query もいける ZE
+
+ちょっと疲れたからコード例は若干割愛するけど以下のように BigQuery.Jobs で呼び出せる。
+
+```tsx
+function bqRunner(): void {
+  const projectId = '***BQのprojectId***'
+
+  const runQuery = (): GoogleAppsScript.Bigquery.Schema.QueryResponse => {
+    const query = `
+      SELECT count(*) FROM \`***テーブル名***\`
+      WHERE
+        ***クエリ***
+    `
+    const request: GoogleAppsScript.Bigquery.Schema.QueryRequest = {
+      query,
+      useLegacySql: false
+    }
+
+    const result = BigQuery.Jobs?.query(request, projectId)
+
+    if (!result) {
+      throw new Error('no result')
+    }
+    return result
+  }
+
+  runQuery()
+}
+```
+
+なぜか DefinitelyTyped の型定義ファイルにタイポが存在して BigQuery の定義がエラーになるので適当にルートに index.d.ts を作成して以下のアンビエント宣言を追加しておこう。
+
+いつまでも直んなかったらプルリク立てるわ。
+
+```tsx
+declare var BigQuery: GoogleAppsScript.Bigquery
+```
+
+BigQuery is not defined みたいなエラーが出る人は GAS のリソース > Google の拡張サービスから BIgQuery を有効にしておこう。
+
+快適な GAS ライフを！
+
+## 感想
+
+この環境をもとに社内用に GAS のボイラープレート作っておいたらこの間一瞬役に立ったのでよかった。
+
+Visual Studio みたいに使える Web エディターまあまあ存在するんだから Google は BQ にしろ GAS にしろもうちょっと使いやすいの実装して欲しいわね。

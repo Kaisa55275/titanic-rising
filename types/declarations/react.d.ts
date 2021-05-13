@@ -20,10 +20,3 @@ declare module 'react' {
     ? ExtractStyledComponentProps<C>
     : React.ComponentProps<C>
 }
-
-declare module 'next' {
-  export type NextPageX<P = {}> = NextPage<P> & {
-    Container?: Container
-  }
-  export type PageContainer = React.FC | React.FCX
-}

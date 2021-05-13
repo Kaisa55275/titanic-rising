@@ -2,9 +2,9 @@ import { firebaseApp } from '.'
 import firebase from 'firebase/app'
 import 'firebase/analytics'
 
-export const analyticsResolver: Promise<ReturnType<
-  typeof firebase.analytics
->> = new Promise((resolve) => {
+export const analyticsResolver: Promise<
+  ReturnType<typeof firebase.analytics>
+> = new Promise((resolve) => {
   if (typeof window !== 'undefined') {
     resolve(firebaseApp.analytics())
   }

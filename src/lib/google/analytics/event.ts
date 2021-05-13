@@ -3,9 +3,9 @@ const isServer = typeof window === 'undefined'
 const GA_ID = 'UA-175239146-1'
 
 export const gaPageView = (path: string): void => {
-  if (isServer) {
-    return
-  }
+  if (isServer) return
+
+  if (!window.gtag) return
   // @ts-ignore
   window.gtag('config', GA_ID, {
     page_path: path
