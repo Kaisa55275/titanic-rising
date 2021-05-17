@@ -5,3 +5,4 @@ node_modules
 public/sw.js
 public/workbox-*.js
 sitemap.xml
+*/**/keys.json
