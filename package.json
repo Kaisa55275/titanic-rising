@@ -39,7 +39,7 @@
     "@types/cookie": "^0.4.0",
     "@types/gapi": "^0.0.39",
     "@types/jsdom": "^16.2.10",
-    "@types/node": "^15.0.2",
+    "@types/node": "^15.12.5",
     "@types/prismjs": "^1.16.5",
     "@types/react": "^17.0.5",
     "@types/styled-components": "^5.1.9",
