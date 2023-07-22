@@ -1,28 +1,34 @@
 # Titanic Rising
-Blog using Next.js + MDX + AMP example
 
-## Features  
-- MDX to hybrid amp pages
-- Frontmatter
-- Syntax highlighting (Prism.js)
-- Generate Sitemap
+This repository contains the source code for the [Titanic Rising](https://titanicrising.jp) website. It is built using Next.js and MDX, with styling performed using kuma-ui.
 
-## Introduction  
-install dependencies  
-```
-yarn install
-```
+## Stack
 
-start dev server  
-```
-yarn dev
-```
+- [Next.js + App Directory](https://nextjs.org/)
+- [MDX](https://mdxjs.com/)
+- [kuma-ui](https://kuma-ui.com/)
 
-build & generate-sitemap
-```
-yarn build
+## Project Setup
+
+Follow the instructions below to set up the project locally.
+
+1. Clone the repository.
+
+```bash
+git clone https://github.com/your-username/titanicrising.git
 ```
 
-### Required Environmental Variables
-- BASE_URL: base url. ex) https://titanicrising.jp
-- VIEW_ID: google analytics view ID
+2. Install the dependencies.
+
+```bash
+cd titanicrising
+npm install
+```
+
+3. Start the local server.
+
+```bash
+npm run dev
+```
+
+Now, you should be able to access the website at `http://localhost:3000`.

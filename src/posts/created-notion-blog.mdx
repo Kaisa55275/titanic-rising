@@ -1,0 +1,404 @@
+---
+title: 'Notion Blogでブログを作った'
+published: true
+draft: false
+date: 20200811
+tag:
+  - Tech
+---
+
+ブログを作ったはいいが書くことがないのでこの話題。技術ブログではないのでご容赦。
+
+成果物？このブログそのものです。
+
+## Notion Blog とは？
+
+Notion を Headless CMS にして NextJS で SSR するやつ。
+
+Notion については書かないけど Notion はかなりいい。
+
+## Notion セットアップ
+
+Notion で新しいページ作ってこういうインラインテーブルを作るだけ。以上。インラインであることが重要。
+
+<img
+  width={2982}
+  height={1242}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383431/titanicrising.jp/created-notion-blog/_2020-08-11_0.00.48_umbj5d.png`}
+  alt="_2020-08-11_0.00.48.png"
+/>
+
+Notion 使ってるとインラインじゃなくて普通のテーブルでつくっちゃって後で気付くとかよくアルゥー
+
+エディタはもう普通に Notion なので最高に使いやすい
+
+ここは Contentful とか Strapi とかよりベター。
+
+<img
+  width={2538}
+  height={1674}
+  src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620383430/titanicrising.jp/created-notion-blog/_2020-08-11_0.05.19_te7gcq.png`}
+  alt="_2020-08-11_0.05.19.png"
+/>
+
+## Next.js セットアップ
+
+[Notion Blog のリポジトリ](https://github.com/ijjk/notion-blog)にいけばワンパンで Vercel にデプロイしてスタート出来るけどここはフロントエンドエンジニアのプライドが許さない。
+
+リポジトリをクローンしてチュートリアル通りに環境変数を入れて yarn dev だ！
+
+環境変数に Notion のトークンを入れてローカルで無事投稿見れた。
+
+こりゃいいなと思ってコードみてみるとかなり複雑。
+
+```tsx
+// src/pages/blog/[slug].tsx
+
+import Link from 'next/link'
+import fetch from 'node-fetch'
+import { useRouter } from 'next/router'
+import Header from 'src/components/shared/header'
+import Heading from 'src/components/shared/heading'
+import components from 'src/components/shared/dynamic'
+import ReactJSXParser from '@zeit/react-jsx-parser'
+import blogStyles from '../../styles/blog.module.css'
+import { textBlock } from '../../lib/notion/renderers'
+import getPageData from '../../lib/notion/getPageData'
+import React, { CSSProperties, useEffect } from 'react'
+import getBlogIndex from '../../lib/notion/getBlogIndex'
+import getNotionUsers from '../../lib/notion/getNotionUsers'
+import { getBlogLink, getDateStr } from '../../lib/blog-helpers'
+
+// Get the data for each blog post
+export async function getStaticProps({ params: { slug }, preview }) {
+  // load the postsTable so that we can get the page's ID
+  const postsTable = await getBlogIndex()
+  const post = postsTable[slug]
+
+  // if we can't find the post or if it is unpublished and
+  // viewed without preview mode then we just redirect to /blog
+  if (!post || (post.Published !== 'Yes' && !preview)) {
+    console.log(`Failed to find post for slug: ${slug}`)
+    return {
+      props: {
+        redirect: '/blog',
+        preview: false
+      },
+      unstable_revalidate: 5
+    }
+  }
+  const postData = await getPageData(post.id)
+  post.content = postData.blocks
+
+  for (let i = 0; i < postData.blocks.length; i++) {
+    const { value } = postData.blocks[i]
+    const { type, properties } = value
+    if (type == 'tweet') {
+      const src = properties.source[0][0]
+      // parse id from https://twitter.com/_ijjk/status/TWEET_ID format
+      const tweetId = src.split('/')[5].split('?')[0]
+      if (!tweetId) continue
+
+      try {
+        const res = await fetch(
+          `https://api.twitter.com/1/statuses/oembed.json?id=${tweetId}`
+        )
+        const json = await res.json()
+        properties.html = json.html.split('<script')[0]
+        post.hasTweet = true
+      } catch (_) {
+        console.log(`Failed to get tweet embed for ${src}`)
+      }
+    }
+  }
+
+  const { users } = await getNotionUsers(post.Authors || [])
+  post.Authors = Object.keys(users).map((id) => users[id].full_name)
+
+  return {
+    props: {
+      post,
+      preview: preview || false
+    },
+    unstable_revalidate: 10
+  }
+}
+
+// Return our list of blog posts to prerender
+export async function getStaticPaths() {
+  const postsTable = await getBlogIndex()
+  // we fallback for any unpublished posts to save build time
+  // for actually published ones
+  return {
+    paths: Object.keys(postsTable)
+      .filter((post) => postsTable[post].Published === 'Yes')
+      .map((slug) => getBlogLink(slug)),
+    fallback: true
+  }
+}
+
+const listTypes = new Set(['bulleted_list', 'numbered_list'])
+
+const RenderPost = ({ post, redirect, preview }) => {
+  const router = useRouter()
+
+  let listTagName: string | null = null
+  let listLastId: string | null = null
+  let listMap: {
+    [id: string]: {
+      key: string
+      isNested?: boolean
+      nested: string[]
+      children: React.ReactFragment
+    }
+  } = {}
+
+  useEffect(() => {
+    const twitterSrc = 'https://platform.twitter.com/widgets.js'
+    // make sure to initialize any new widgets loading on
+    // client navigation
+    if (post && post.hasTweet) {
+      if ((window as any)?.twttr?.widgets) {
+        ;(window as any).twttr.widgets.load()
+      } else if (!document.querySelector(`script[src="${twitterSrc}"]`)) {
+        const script = document.createElement('script')
+        script.async = true
+        script.src = twitterSrc
+        document.querySelector('body').appendChild(script)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (redirect && !post) {
+      router.replace(redirect)
+    }
+  }, [redirect, post])
+
+  // If the page is not yet generated, this will be displayed
+  // initially until getStaticProps() finishes running
+  if (router.isFallback) {
+    return <div>Loading...</div>
+  }
+
+  // if you don't have a post at this point, and are not
+  // loading one from fallback then  redirect back to the index
+  if (!post) {
+    return (
+      <div className={blogStyles.post}>
+        <p>
+          Woops! didn't find that post, redirecting you back to the blog index
+        </p>
+      </div>
+    )
+  }
+
+  return <>// ここにクソ長いviewが書かれている</>
+}
+
+export default RenderPost
+```
+
+一旦はあまり触らないとして投稿の型定義がいくらなんでも緩すぎるのと /pages ディレクトリのファイルに全部書かれすぎている。
+
+自分は CSS in JS が好みだが pages 配下のファイルにスタイル書くのはなんか気が引ける&モジュール分割クソ野郎なので 200 行以上のファイルは直視出来ず Post 用のコンポーネントを切ることにした。
+
+まずは Post の型定義
+
+```tsx
+// types/blog.ts
+
+type PostContentValue = {
+  alive: boolean
+  created_by_id: string
+  created_by_table: string
+  created_time: number
+  id: string
+  last_edited_by_id: string
+  last_edited_by_table: string
+  last_edited_time: number
+  parent_id: string
+  parent_table: string
+  properties: {
+    title: string[]
+    language?: string[][]
+    html?: string
+  }
+  shard_id: number
+  space_id: string
+  type: string
+  version: number
+  format?: {
+    block_width?: number
+    block_height?: number
+    display_source?: string
+    block_aspect_ratio?: number
+    page_icon?: string
+  }
+  file_ids: string[]
+}
+
+type PostContent = {
+  role: string
+  value: PostContentValue
+}
+
+export type Post = {
+  id: string
+  Authors: string[]
+  Slug: string
+  Published: 'Yes' | 'No'
+  Date: number
+  Page: string
+  preview: unknown[][]
+  content: PostContent[]
+  hasTweet: boolean
+}
+
+export type Posts = Post[]
+```
+
+Hook と View をコンポーネント層に移して let 宣言根絶（window の global 宣言とかは後回し）
+
+```tsx
+// src/components/Post.tsx
+
+import React, { useEffect, CSSProperties } from 'react'
+import components from 'src/components/shared/dynamic'
+import { useRouter } from 'next/router'
+import Header from 'src/components/shared/header'
+import Link from 'next/link'
+import { getDateStr } from 'src/lib/blog-helpers'
+import Heading from 'src/components/shared/heading'
+import ReactJSXParser from '@zeit/react-jsx-parser'
+import { textBlock } from 'src/lib/notion/renderers'
+import { Post as PostType } from 'types/blog'
+
+type Props = {
+  post: PostType
+  redirect: string
+  preview: boolean
+}
+
+interface IListItems {
+  listTagName: string | null
+  listLastId: string | null
+  listMap: {
+    [id: string]: {
+      key: string
+      isNested?: boolean
+      nested: string[]
+      children: React.ReactFragment
+    }
+  }
+}
+
+const Post: React.FCX<Props> = (props) => {
+  const { post, redirect, preview, className } = props
+  const listTypes = new Set(['bulleted_list', 'numbered_list'])
+  const router = useRouter()
+  const listItems: IListItems = {
+    listTagName: null,
+    listLastId: null,
+    listMap: {}
+  }
+
+  useEffect(() => {
+    const twitterSrc = 'https://platform.twitter.com/widgets.js'
+    if (post && post.hasTweet) {
+      if ((window as any)?.twttr?.widgets) {
+        ;(window as any).twttr.widgets.load()
+      } else if (!document.querySelector(`script[src="${twitterSrc}"]`)) {
+        const script = document.createElement('script')
+        script.async = true
+        script.src = twitterSrc
+        document.querySelector('body').appendChild(script)
+      }
+    }
+  }, [post])
+
+  useEffect(() => {
+    if (redirect && !post) {
+      router.replace(redirect)
+    }
+  }, [redirect, post, router])
+
+  if (router.isFallback) {
+    return <div>Loading...</div>
+  }
+
+  if (!post) {
+    return (
+      <div className={className}>
+        <p>
+          Woops! did not find that post, redirecting you back to the blog index
+        </p>
+      </div>
+    )
+  }
+
+  return <>// view</>
+}
+
+export default Post
+```
+
+でこのコンポーネントを/pages 配下の親コンポーネントから呼んであげるとビューティー（だと思う…）
+
+後自分は見た目が好みだからコンポーネントも const アロー関数で定義するけど function の方が良いみたいなのと default export は pages 配下意外とかでは使わない方がいいらしい。
+
+```tsx
+// src/pages/blog/[slug].tsx
+
+import React from 'react'
+import fetch from 'node-fetch'
+import getPageData from 'src/lib/notion/getPageData'
+import getBlogIndex from 'src/lib/notion/getBlogIndex'
+import getNotionUsers from 'src/lib/notion/getNotionUsers'
+import { getBlogLink } from 'src/lib/blog-helpers'
+import Layout from 'src/components/layouts/Layout'
+import Post from 'src/components/pages/Blog/Post'
+import { GetStaticProps, NextPage, GetStaticPaths } from 'next'
+import { Post as PostType } from 'types/blog'
+
+type StaticProps = {
+  post?: PostType
+  redirect?: string
+  preview: boolean
+}
+
+export const getStaticProps: GetStaticProps<StaticProps> = async ({
+  params: { slug },
+  preview
+}) => {
+  //　変更なし
+}
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  //　変更なし
+}
+
+const RenderPost: NextPage<StaticProps> = (props) => {
+  return (
+    <Layout>
+      <Post
+        post={props.post}
+        preview={props.preview}
+        redirect={props.redirect}
+      />
+    </Layout>
+  )
+}
+
+export default RenderPost
+```
+
+めっちゃきれいになったけどブログの見た目なんも変わらん
+
+デプロイ？SSR？？知りもはんなあ…
+
+そのうちスタイリング編やるかなあ…デフォルトの CSS は消してちょっと見た目整えたけどスタイル書くのちょっとめんどくさくて怠けているしシンプルなサイトも悪くなくね？
+
+とりあえず AMP と PWA 対応やりたいけどこのサイトをそれらに対応させる時間マジで無駄感は否めないですね
+
+以上

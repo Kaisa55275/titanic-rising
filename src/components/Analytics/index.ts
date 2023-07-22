@@ -1,1 +1,0 @@
-export { AmpAnalytics } from './AmpAnalytics'
