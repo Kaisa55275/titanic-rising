@@ -47,6 +47,7 @@ const styles = {
     align-items: center;
     margin-bottom: 10px;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
   `,
   title: css`
     font-size: 1.4rem;
@@ -57,7 +58,6 @@ const styles = {
   date: css`
     font-size: 1.2rem;
     color: #666;
-
   `,
   content: css`
     padding: 10px;
@@ -68,7 +68,6 @@ const styles = {
     height: 90px;
     margin-right: 10px;
     position: relative;
-    border-radius: 3px;
     overflow: hidden;
 
     > img {
