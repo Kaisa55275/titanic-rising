@@ -179,6 +179,7 @@ const styles = {
           margin-left: 6px;
           width: 12px;
           height: 12px;
+          display: inline-block;
         }
       }
 
