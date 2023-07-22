@@ -31,7 +31,28 @@ export const generateMetadata = async ({
 
   return {
     title: post.data.title,
-    ogp: post.data.ogp,
+    description: "",
+    twitter: {
+      card: "summary",
+      site: "@titanicrisingjp",
+      creator: "@titanicrisingjp",
+      title: post.data.title,
+      description: "",
+      images: [
+        {
+          url: post.data.ogp || "https://titanicrising.jp/images/tr.jpg",
+        },
+      ],
+    },
+    openGraph: {
+      title: post.data.title,
+      description: "",
+      images: [
+        {
+          url: post.data.ogp || "https://titanicrising.jp/images/tr.jpg",
+        },
+      ],
+    },
   }
 }
 
