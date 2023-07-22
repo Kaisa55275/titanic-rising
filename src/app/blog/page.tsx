@@ -8,12 +8,7 @@ import { Metadata } from "next"
 export const revalidate = false
 
 export const metadata: Metadata = {
-  icons: [
-    {
-      url: "/favicons/favicon.ico",
-      rel: "icon",
-    },
-  ],
+  title: "Blog | Daiki Nimura",
 }
 
 export default async function Page() {
