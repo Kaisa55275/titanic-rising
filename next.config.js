@@ -4,12 +4,7 @@ const { withKumaUI } = require("@kuma-ui/next-plugin")
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: [
-      "firebasestorage.googleapis.com",
-      "titanicrising.jp",
-      "localhost",
-      "res.cloudinary.com",
-    ],
+    domains: ["firebasestorage.googleapis.com", "titanicrising.jp", "res.cloudinary.com"],
   },
   experimental: {
     appDir: true,

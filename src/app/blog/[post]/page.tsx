@@ -174,5 +174,12 @@ const styles = {
       width: 100%;
       max-width: 500px;
     }
+
+    .markdown-viewer img {
+      width: 100%;
+      max-width: 500px;
+      display: block;
+      margin: 20px 0;
+    }
   `,
 }
