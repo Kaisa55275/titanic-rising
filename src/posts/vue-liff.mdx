@@ -110,7 +110,7 @@ npm i @line/liff
 
 とりあえず src/components/HelloWorld.vue を以下のように編集した。
 
-```markup
+```html
 <template>
   <div class="hello-world" v-if="isInClient">
     <h1 class="hello-world__title">
@@ -225,7 +225,7 @@ yarn serve して localhost:8080 でみられるようになるが、https し�
 
 無事インストールできたら以下のコマンドを叩く。
 
-```markup
+```
 ngrok http 8080 -host-header="localhost:8080"
 ```
 
