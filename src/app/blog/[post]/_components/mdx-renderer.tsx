@@ -104,27 +104,12 @@ export const MDXRenderer = ({ source }: { source: string }) => {
     <MDXRemote
       source={source}
       components={{
-        // @ts-expect-error なんかエラーになる
-        MusicLink,
-        a: (props) => {
-          const PlaneAnchor = () => {
-            return (
-              <a {...props} target="_blank" rel="noopener noreferrer" className="plane-anchor" />
-            )
-          }
-          if (typeof props.children === "string" && props.children.includes("!!BOOKMARK!!")) {
-            return (
-              <Suspense fallback={<PlaneAnchor />}>
-                <BookMark
-                  href={props.href || ""}
-                  title={props.title?.replace("!!BOOKMARK!!", "")}
-                />
-              </Suspense>
-            )
-          }
-
-          return <PlaneAnchor />
-        },
+        MusicLink: (props) => <MusicLink {...props} />,
+        BookMark: (props) => (
+          <Suspense fallback={<a {...props} target="_blank" rel="noopener noreferrer" />}>
+            <BookMark {...props} />
+          </Suspense>
+        ),
         code: (props) => {
           const language = props.className?.replace("language-", "")
 

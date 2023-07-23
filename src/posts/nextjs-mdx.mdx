@@ -28,7 +28,9 @@ Notion はどっかのサービスと違ってしっかりとドキュメント�
 通常のマークダウンに加えて、中に JSX やスタイルを書く事ができる。
 詳しくは以下！
 
-[!!BOOKMARK!!](https://mdxjs.com/)
+<BookMark
+  href="https://mdxjs.com/"
+/>
 
 サンプルコードはこんな感じ  
 これは実際の先日の記事のもの。
@@ -368,14 +370,18 @@ const components = {
 ## dynamic import
 
 ページによって読み込む mdx ファイルを指定し分ける為に next/dynamic を使用する。
-[!!BOOKMARK!!](https://nextjs.org/docs/advanced-features/dynamic-import)
+
+<BookMark
+  href="https://nextjs.org/docs/advanced-features/dynamic-import"
+/>
 
 next/dynamicはトップレベルでの使用が推奨されているので事前に全てのmdxのdynamic importを記述し、
 ページ毎にそれぞれimportする必要がある。
 
-以下のように getStaticProps で取得した slug をパスしてあげる。 
-これを実現するため、next.jsのビルド時に全てのdynamic-importを含むファイルを自動で生成する。 
+以下のように getStaticProps で取得した slug をパスしてあげる。
+これを実現するため、next.jsのビルド時に全てのdynamic-importを含むファイルを自動で生成する。
 具体的には以下のようなファイルを書いた。
+
 ```typescript
 // src/assets/scripts/createMdxImport.ts
 import { join } from 'path'
@@ -419,6 +425,7 @@ export const createMdxImport = () => {
 ```
 
 next.config.jsはJavaScriptで記述されているので上記のスクリプトを実行するにはts-nodeを使用する必要がある。
+
 ```javascript
 'use strict'
 require('ts-node').register({
@@ -431,6 +438,7 @@ exports.createMdxImport = require('./createMdxImport.ts').createMdxImport
 ```
 
 上のmain.jsをnext.coonfig.js上で実行する
+
 ```javascript
 // next.config.js
 
@@ -446,6 +454,7 @@ module.exports = nextConfig
 ```
 
 この状態でnext、あるいはnext buildコマンドを走らせると以下のようにファイルを生成したぜ！とログが表示される
+
 <img
   src={`https://res.cloudinary.com/dw86z2fnr/image/upload/v1620895670/titanicrising.jp/nextjs-mdx/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88_2021-05-13_17.46.22_mk9yio.png`}
   width={745}
@@ -454,6 +463,7 @@ module.exports = nextConfig
 />
 
 posts/docs上に以下のようなファイルが生成されている
+
 ```typescript
 import dynamic from 'next/dynamic'
 type MDXPostsType = { [key: string]: React.ComponentType }
@@ -472,7 +482,7 @@ export const MDXPosts: MDXPostsType = {
 
 ```
 
-あとはダイナミックルーティング上でこのMDXPostsオブジェクトをインポートし、staticPathを使用するなどして参照すればOK
+あとはダイナミックルーティング上でこのMDXPostsオブジェクトをインポートし、staticPathを使用するなどして参照すればOK
 勿論Ampなどでも問題なく表示される。
 
 ```tsx
@@ -504,4 +514,6 @@ const Component: React.FC = (props) => {
 途中部分までのソースコードは以下。  
 自分の名前とかがハードコードされているのでその辺は…
 
-[!!BOOKMARK!!https://github.com/Kaisa55275/titanic-rising](https://github.com/Kaisa55275/titanic-rising)
+<BookMark
+  href="https://github.com/Kaisa55275/titanic-rising"
+/>

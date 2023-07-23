@@ -52,7 +52,6 @@ const styles = {
   title: css`
     font-size: 1.4rem;
     font-weight: bold;
-    width: calc(100% - 120px);
     margin-bottom: 8px;
   `,
   date: css`
